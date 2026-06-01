@@ -1,0 +1,28 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/.user.yml
+
+# Data files
+*.parquet
+*.csv
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+# dbt tmdb_postgres
+tmdb_postgres/target/
+tmdb_postgres/logs/
+tmdb_postgres/.user.yml

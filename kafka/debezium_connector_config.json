@@ -1,0 +1,17 @@
+{
+  "name": "tmdb-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "admin",
+    "database.password": "adminadmin",
+    "database.dbname": "tmdb_db",
+    "database.server.name": "tmdb",
+    "table.include.list": "silver_mart_silver_mart.dim_movies,silver_mart_silver_mart.dim_revenue,silver_mart_silver_mart.dim_genres,silver_mart_silver_mart.dim_directors,silver_mart_silver_mart.dim_actors,silver_mart_silver_mart.dim_country,silver_mart_silver_mart.dim_language,silver_mart_silver_mart.dim_company,silver_mart_silver_mart.dim_yearlysum,silver_mart_silver_mart.fact_vs,silver_mart_silver_mart.fact_yearly",
+    "plugin.name": "pgoutput",
+    "publication.autocreate.mode": "filtered",
+    "topic.prefix": "tmdb",
+    "slot.name": "debezium_slot"
+  }
+}

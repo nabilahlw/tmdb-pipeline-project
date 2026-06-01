@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: public
+    database: tmdb_db
+    schema: public
+    tables:
+      - name: merge_raw
+      - name: tmdb_raw

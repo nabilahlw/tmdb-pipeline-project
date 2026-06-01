@@ -1,0 +1,31 @@
+[0m08:54:17.971329 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a91cac0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10b992850>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10b992670>]}
+
+
+============================== 08:54:17.974677 | dc6e3283-28df-4df6-b798-36e6620b0d1c ==============================
+[0m08:54:17.974677 [info ] [MainThread]: Running with dbt=1.10.22
+[0m08:54:17.975055 [debug] [MainThread]: running dbt with arguments {'log_cache_events': 'False', 'cache_selected_only': 'False', 'partial_parse': 'True', 'empty': 'None', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'use_experimental_parser': 'False', 'log_path': 'logs', 'fail_fast': 'False', 'no_print': 'None', 'profiles_dir': '/Users/macbookpro/.dbt', 'debug': 'False', 'static_parser': 'True', 'invocation_command': 'dbt init dbt', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'log_format': 'default', 'warn_error': 'None', 'target_path': 'None', 'indirect_selection': 'eager', 'use_colors': 'True', 'version_check': 'True'}
+[0m08:54:17.984224 [info ] [MainThread]: Creating dbt configuration folder at /Users/macbookpro/.dbt
+[0m08:55:24.503931 [debug] [MainThread]: Starter project path: /Users/macbookpro/Library/Python/3.9/lib/python/site-packages/dbt/include/starter_project
+[0m08:55:24.520697 [info ] [MainThread]: 
+Your new dbt project "tmdb_postgres" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m08:55:24.521495 [info ] [MainThread]: Setting up your profile.
+[0m08:57:13.814004 [info ] [MainThread]: Profile tmdb_postgres written to /Users/macbookpro/.dbt/profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m08:57:13.857417 [debug] [MainThread]: Resource report: {"command_name": "init", "command_success": true, "command_wall_clock_time": 175.94188, "process_in_blocks": "0", "process_kernel_time": 0.17794, "process_mem_max_rss": "99876864", "process_out_blocks": "0", "process_user_time": 0.875102}
+[0m08:57:13.858627 [debug] [MainThread]: Command `dbt init` succeeded at 08:57:13.858385 after 175.94 seconds
+[0m08:57:13.859597 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a91cac0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10bdf13a0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10b970130>]}
+[0m08:57:13.860446 [debug] [MainThread]: Flushing usage events
+[0m08:57:15.237789 [debug] [MainThread]: An error was encountered while trying to flush usage events

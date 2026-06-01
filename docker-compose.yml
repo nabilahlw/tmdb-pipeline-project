@@ -1,0 +1,221 @@
+version: '3.8'
+
+services:
+
+  # ─── POSTGRESQL ───────────────────────────────────────────
+  postgres:
+    image: postgres:13
+    container_name: tmdb_postgres
+    environment:
+      POSTGRES_DB: tmdb_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminadmin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: >
+      postgres
+        -c wal_level=logical
+        -c max_replication_slots=10
+        -c max_wal_senders=10
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── PGADMIN ──────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tmdb_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminadmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── ZOOKEEPER ────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: tmdb_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── KAFKA ────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: tmdb_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── DEBEZIUM ─────────────────────────────────────────────
+  debezium:
+    image: debezium/connect:2.4
+    container_name: tmdb_debezium
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── KAFKA MANAGER (UI) ───────────────────────────────────
+  kafka_manager:
+    image: hlebalbau/kafka-manager:latest
+    container_name: tmdb_kafka_man
+    depends_on:
+      - zookeeper
+    ports:
+      - "9000:9000"
+    environment:
+      ZK_HOSTS: zookeeper:2181
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── CLICKHOUSE ───────────────────────────────────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: tmdb_clickhouse
+    ports:
+      - "18123:8123"
+      - "19000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── MINIO ────────────────────────────────────────────────
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: tmdb_minio
+    ports:
+      - "9002:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ':9001'
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── AIRFLOW INIT ─────────────────────────────────────────
+  airflow-init:
+    image: apache/airflow:2.8.1
+    container_name: tmdb_airflow_init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:adminadmin@postgres/tmdb_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    command: >
+      bash -c "airflow db migrate && airflow users create
+        --username admin
+        --password adminadmin
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email admin@admin.com"
+    depends_on:
+      - postgres
+    networks:
+      - tmdb_network
+
+  # ─── AIRFLOW WEBSERVER ────────────────────────────────────
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    container_name: tmdb_airflow_web
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:adminadmin@postgres/tmdb_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./spark:/opt/airflow/spark
+      - ./ingestion:/opt/airflow/ingestion
+      - ./minio:/opt/airflow/minio
+      - airflow_logs:/opt/airflow/logs
+    command: webserver
+    depends_on:
+      - postgres
+      - airflow-init
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+  # ─── AIRFLOW SCHEDULER ────────────────────────────────────
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    container_name: tmdb_airflow_scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:adminadmin@postgres/tmdb_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./spark:/opt/airflow/spark
+      - ./ingestion:/opt/airflow/ingestion
+      - ./minio:/opt/airflow/minio
+      - airflow_logs:/opt/airflow/logs
+    command: scheduler
+    depends_on:
+      - postgres
+      - airflow-init
+    networks:
+      - tmdb_network
+    restart: unless-stopped
+
+# ─── VOLUMES ──────────────────────────────────────────────
+volumes:
+  postgres_data:
+  clickhouse_data:
+  minio_data:
+  airflow_logs:
+
+# ─── NETWORK ──────────────────────────────────────────────
+networks:
+  tmdb_network:
+    driver: bridge
