@@ -11,41 +11,9 @@
 Proyek ini membangun **pipeline data end-to-end** untuk menganalisis industri film global menggunakan **Medallion Architecture** (Bronze → Silver → Gold). Data bersumber dari Kaggle (CSV) dan TMDB API, lalu diproses melalui stack data engineering modern: dbt, PySpark, Kafka + Debezium, ClickHouse, MinIO, dan Streamlit.
 
 ---
-
 ## 🏗️ Arsitektur
 
-```
-TMDB API + Kaggle CSV
-        │
-        ▼
-  ┌─────────────┐
-  │   BRONZE    │  PostgreSQL — tmdb_raw, merge_raw, csv_movies_raw
-  └──────┬──────┘
-         │  ingestion/ scripts
-         ▼
-  ┌─────────────┐
-  │   SILVER    │  dbt — stg_movies, stg_credits, stg_tmdbapi (Views)
-  └──────┬──────┘
-         │  tmdb_postgres/models/silver/
-         ▼
-  ┌─────────────┐
-  │    GOLD     │  dbt — 11 Mart Models (dim_*, fact_*)
-  └──────┬──────┘
-         │  tmdb_postgres/models/gold/
-    ┌────┴──────────┐
-    ▼               ▼
-PySpark ETL     Kafka + Debezium CDC
-spark/          kafka/
-    │               │
-    ▼               ▼
-MinIO (Parquet)  ClickHouse (OLAP)
-minio/           clickhouse/
-                     │
-                     ▼
-             Streamlit Dashboard
-             dashboard/app.py
-```
-
+![Arsitektur Pipeline](arsitektur - tmdb pipeline.png)
 ---
 
 ## 🛠️ Tech Stack
