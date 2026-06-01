@@ -12,7 +12,6 @@ Proyek ini membangun **pipeline data end-to-end** untuk menganalisis industri fi
 
 ---
 ## 🏗️ Arsitektur
-
 ![Arsitektur Pipeline](arsitektur%20-%20tmdb%20pipeline.png)
 ---
 
@@ -142,7 +141,7 @@ tmdb-pipeline-project/
 
 ---
 
-## 📊 Dataset
+## 📊 Data Source
 
 | # | Sumber | Tipe | Rows | Deskripsi |
 |---|---|---|---|---|
