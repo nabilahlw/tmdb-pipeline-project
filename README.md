@@ -1,5 +1,5 @@
 # 🎬 TMDB Movie Pipeline
-### Pipeline Data End-to-End | Bronze → Silver → Gold → Dashboard
+### Pipeline Data End-to-End | Bronze → Silver → Gold → BigQuery
 
 > **Final Project — Bootcamp Data Engineering rubythalib.ai**  
 > By: **Nabila Hulwana Z.**
@@ -8,11 +8,14 @@
 
 ## 📖 Tentang Proyek
 
-Proyek ini membangun **pipeline data end-to-end** untuk menganalisis industri film global menggunakan **Medallion Architecture** (Bronze → Silver → Gold). Data bersumber dari Kaggle (CSV) dan TMDB API, lalu diproses melalui stack data engineering modern: dbt, PySpark, Kafka + Debezium, ClickHouse, MinIO, dan Streamlit.
+Proyek ini membangun **pipeline data end-to-end** untuk menganalisis industri film global menggunakan **Medallion Architecture** (Bronze → Silver → Gold). Data bersumber dari Kaggle (CSV) dan TMDB API, lalu diproses melalui stack data engineering modern: dbt, PySpark, Kafka + Debezium, ClickHouse, MinIO, Streamlit, Apache Airflow, dan Google BigQuery.
 
 ---
+
 ## 🏗️ Arsitektur
-![Arsitektur Pipeline](arsitektur%20-%20tmdb%20pipeline.png)
+
+![Arsitektur Pipeline](docs/arsitektur%20-%20tmdb%20pipeline.png)
+
 ---
 
 ## 🛠️ Tech Stack
@@ -27,6 +30,7 @@ Proyek ini membangun **pipeline data end-to-end** untuk menganalisis industri fi
 | **Object Storage** | MinIO (S3-compatible) |
 | **Dashboard** | Streamlit |
 | **Orkestrasi** | Apache Airflow |
+| **Cloud Data Warehouse** | Google BigQuery |
 | **Kontainerisasi** | Docker + Docker Compose |
 | **Admin DB** | pgAdmin 4 |
 
@@ -39,41 +43,22 @@ tmdb-pipeline-project/
 ├── docker-compose.yml
 ├── .env                          # Tidak di-commit (lihat .env.example)
 ├── .gitignore
-├── README_EN.md
 ├── README_ID.md
+├── README_EN.md
 │
 ├── ingestion/                    # Step 1 — Ingesti data
-│   ├── fetch_tmdb_api.py         # Ambil data dari TMDB API
-│   ├── load_kaggle_csv.py        # Load CSV ke PostgreSQL
-│   ├── merge_raw.py              # Merge sumber data mentah
+│   ├── fetch_tmdb_api.py
+│   ├── load_kaggle_csv.py
+│   ├── merge_raw.py
 │   └── data/
 │       ├── tmdb_5000_movies.csv
 │       └── tmdb_5000_credits.csv
 │
 ├── tmdb_postgres/                # Step 2 — dbt project (Silver + Gold)
 │   ├── dbt_project.yml
-│   ├── models/
-│   │   ├── silver/               # Staging views
-│   │   │   ├── sources.yml
-│   │   │   ├── stg_movies.sql
-│   │   │   ├── stg_credits.sql
-│   │   │   └── stg_tmdbapi.sql
-│   │   └── gold/                 # Mart models
-│   │       ├── dim_movies.sql
-│   │       ├── dim_revenue.sql
-│   │       ├── dim_genres.sql
-│   │       ├── dim_directors.sql
-│   │       ├── dim_actors.sql
-│   │       ├── dim_country.sql
-│   │       ├── dim_language.sql
-│   │       ├── dim_company.sql
-│   │       ├── dim_yearlysum.sql
-│   │       ├── fact_vs.sql
-│   │       └── fact_yearly.sql
-│   ├── macros/
-│   ├── seeds/
-│   ├── tests/
-│   └── snapshots/
+│   └── models/
+│       ├── silver/               # stg_movies, stg_credits, stg_tmdbapi
+│       └── gold/                 # 11 mart models (dim_*, fact_*)
 │
 ├── optimization/                 # Step 3 — Query optimization
 │   ├── create_indexes.sql
@@ -92,19 +77,21 @@ tmdb-pipeline-project/
 │   └── gold_views.sql
 │
 ├── minio/                        # Step 7 — MinIO Object Storage
-│   └── export_mart_to_parquet.py
+│   ├── export_mart_to_parquet.py
+│   └── export_to_bigquery.py     # Export Parquet → BigQuery
 │
-├── dags/                         # Airflow DAGs
-│   └── tmdb_pipeline_dag.py
+├── dags/                         # Step 9 — Airflow DAG
+│   └── tmdb_pipeline_dag.py      # 5 task otomatis end-to-end
 │
 ├── dashboard/                    # Step 8 — Streamlit Dashboard
 │   ├── app.py
 │   ├── components/
 │   └── pages/
 │
-├── docs/                         # Dokumentasi & diagram arsitektur
-└── logs/
-    └── dbt.log
+└── docs/                         # Dokumentasi & diagram arsitektur
+    ├── arsitektur - tmdb pipeline.png
+    ├── Laporan projek data eng - tmdb pipeline.pdf
+    └── PPT-tmdb pipeline- data eng project.pdf
 ```
 
 ---
@@ -118,16 +105,18 @@ tmdb-pipeline-project/
 | Step 2a | Bronze Layer — PostgreSQL raw tables | ✅ Selesai |
 | Step 2b | Silver Layer — dbt staging views (3 model) | ✅ Selesai |
 | Step 2c | Gold Layer — dbt mart models (11 model) | ✅ Selesai |
-| Step 3 | Query Optimization — 7 index, partisi, 4 MV, trigger | ✅ Selesai |
+| Step 3 | Query Optimization — 7 index, 4 MV, 9 trigger, 10 partisi | ✅ Selesai |
 | Step 4 | PySpark ETL | ✅ Selesai |
-| Step 5 | Kafka + Debezium CDC | ✅ Selesai |
+| Step 5 | Kafka + Debezium CDC — 16 topics | ✅ Selesai |
 | Step 6 | ClickHouse OLAP — 9 objek | ✅ Selesai |
 | Step 7 | MinIO Object Storage — 7 file Parquet (2.7 MiB) | ✅ Selesai |
 | Step 8 | Streamlit Dashboard | ✅ Selesai |
+| Step 9 | Apache Airflow — DAG 5 task otomatis | ✅ Selesai |
+| Step 10 | Google BigQuery — 7 tabel (14.961 rows) | ✅ Selesai |
 
 ---
 
-## 🌐 Akses Services (Container Docker harus jalan)
+## 🌐 Akses Services
 
 | Service | URL | Login |
 |---|---|---|
