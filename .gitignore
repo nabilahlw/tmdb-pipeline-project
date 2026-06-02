@@ -26,3 +26,5 @@ Thumbs.db
 tmdb_postgres/target/
 tmdb_postgres/logs/
 tmdb_postgres/.user.yml
+
+gcp_key.json
